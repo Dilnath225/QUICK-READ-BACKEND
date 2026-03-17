@@ -28,7 +28,6 @@ func ConnectDB() {
 		os.Getenv("DB_NAME"),
 	)
 
-	var err error
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
