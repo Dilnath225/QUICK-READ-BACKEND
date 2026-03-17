@@ -16,12 +16,16 @@ func InitLogger() {
 	var cfg zap.Config
 	if env == "production" {
 		cfg = zap.NewProductionConfig()
+		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
 
 	} else {
 		cfg = zap.NewDevelopmentConfig()
-	}
+		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+		cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		cfg.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+		cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	}
 
 	var err error
 	Logger, err = cfg.Build()
@@ -30,4 +34,5 @@ func InitLogger() {
 	}
 
 	sugar = Logger.Sugar()
+	sugar.Info("Logger initialized", "env", env)
 }
