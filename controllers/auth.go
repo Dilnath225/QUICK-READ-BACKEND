@@ -5,8 +5,9 @@ import (
 	"QUICK-READ-BACKEND/utils"
 	"net/http"
 
+	"QUICK-READ-BACKEND/models"
+
 	"github.com/gin-gonic/gin"
-	"github.com/yourusername/QUICK-READ-BACKEND/models"
 )
 
 // Input Structures

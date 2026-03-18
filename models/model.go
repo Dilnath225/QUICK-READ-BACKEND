@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -77,4 +79,49 @@ type CartItem struct {
 	Dosage     string  `json:"dosage"`
 	Price      float64 `json:"price"`
 	Quantity   int     `json:"quantity"`
+}
+
+type DeliveryDriver struct {
+	gorm.Model
+	UserID       uint    `json:"user_id" gorm:"uniqueIndex"`
+	VehicleType  string  `json:"vehicle_type"` // "bike", "car", "van"
+	LicensePlate string  `json:"license_plate"`
+	IsAvailable  bool    `json:"is_available" gorm:"default:true"`
+	CurrentLat   float64 `json:"current_lat"`
+	CurrentLng   float64 `json:"current_lng"`
+	Rating       float64 `json:"rating" gorm:"default:5.0"`
+	TotalTrips   int     `json:"total_trips" gorm:"default:0"`
+}
+
+type DeliveryHistory struct {
+	gorm.Model
+	OrderID   uint      `json:"order_id" gorm:"index"`
+	DriverID  uint      `json:"driver_id" gorm:"index"`
+	Status    string    `json:"status"`
+	Latitude  float64   `json:"latitude"`
+	Longitude float64   `json:"longitude"`
+	Timestamp time.Time `json:"timestamp"`
+	Note      string    `json:"note"`
+}
+
+type Route struct {
+	gorm.Model
+	OrderID      uint    `json:"order_id" gorm:"index"`
+	DriverID     uint    `json:"driver_id" gorm:"index"`
+	StartLat     float64 `json:"start_lat"`
+	StartLng     float64 `json:"start_lng"`
+	EndLat       float64 `json:"end_lat"`
+	EndLng       float64 `json:"end_lng"`
+	Distance     float64 `json:"distance"`      // in kilometers
+	EstimatedMin int     `json:"estimated_min"` // estimated minutes
+	Status       string  `json:"status"`        // "active", "completed", "cancelled"
+}
+
+type Notification struct {
+	gorm.Model
+	UserID  uint   `json:"user_id" gorm:"index"`
+	Title   string `json:"title"`
+	Message string `json:"message"`
+	Type    string `json:"type"` // "order_update", "inventory_alert", "delivery_update", "system"
+	IsRead  bool   `json:"is_read" gorm:"default:false"`
 }
