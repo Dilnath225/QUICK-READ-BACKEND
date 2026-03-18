@@ -1,12 +1,12 @@
 package controllers
 
 import (
-	"QUICK-READ-BACKEND/models"
 	"QUICK-READ-BACKEND/services"
 	"QUICK-READ-BACKEND/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/yourusername/QUICK-READ-BACKEND/models"
 )
 
 // Input Structures
