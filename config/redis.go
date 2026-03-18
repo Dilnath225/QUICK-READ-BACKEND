@@ -39,3 +39,42 @@ func ConnectRedis() {
 		fmt.Println("✅ Connected to Redis successfully!")
 	}
 }
+
+// CacheSet stores a value in Redis with a TTL
+func CacheSet(key string, value string, ttl time.Duration) error {
+	if RedisClient == nil {
+		return nil
+	}
+	return RedisClient.Set(RedisCtx, key, value, ttl).Err()
+}
+
+// CacheGet retrieves a value from Redis
+func CacheGet(key string) (string, error) {
+	if RedisClient == nil {
+		return "", fmt.Errorf("redis not available")
+	}
+	return RedisClient.Get(RedisCtx, key).Result()
+}
+
+// CacheDelete removes a key from Redis
+func CacheDelete(key string) error {
+	if RedisClient == nil {
+		return nil
+	}
+	return RedisClient.Del(RedisCtx, key).Err()
+}
+
+// CacheDeletePattern removes all keys matching a pattern
+func CacheDeletePattern(pattern string) error {
+	if RedisClient == nil {
+		return nil
+	}
+	keys, err := RedisClient.Keys(RedisCtx, pattern).Result()
+	if err != nil {
+		return err
+	}
+	if len(keys) > 0 {
+		return RedisClient.Del(RedisCtx, keys...).Err()
+	}
+	return nil
+}
