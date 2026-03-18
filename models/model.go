@@ -6,14 +6,16 @@ import (
 	"gorm.io/gorm"
 )
 
-// User Model (Patients, Pharmacists, Riders)
+// Users (Patients, Pharmacists, Delivery)
 type User struct {
 	gorm.Model
-	Name     string `json:"name"`
-	Email    string `json:"email" gorm:"unique"`
-	Password string `json:"-"`
-	Address  string `json:"address"`
-	Role     string `json:"role"` // "patient", "pharmacist", "rider"
+	Name        string `json:"name"`
+	Email       string `json:"email" gorm:"uniqueIndex;size:255"`
+	Password    string `json:"-"`
+	Role        string `json:"role" gorm:"index;size:100"` // "patient", "pharmacist", "delivery"
+	Address     string `json:"address"`
+	DateOfBirth string `json:"date_of_birth"`
+	Phone       string `json:"phone"`
 }
 
 // Medicines (for Stock Checking)
