@@ -74,3 +74,12 @@ func (s *CartService) RemoveItem(userID uint, itemID string) (*models.Cart, erro
 	config.DB.Preload("Items").First(&cart, cart.ID)
 	return cart, nil
 }
+/ ClearCart removes all items from the cart
+func (s *CartService) ClearCart(userID uint) error {
+	cart, err := s.GetOrCreateCart(userID)
+	if err != nil {
+		return err
+	}
+
+	return config.DB.Where("cart_id = ?", cart.ID).Delete(&models.CartItem{}).Error
+}
