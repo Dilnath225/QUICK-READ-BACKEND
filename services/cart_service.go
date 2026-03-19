@@ -36,3 +36,22 @@ func (s *CartService) AddItem(userID uint, medicineID uint, quantity int) (*mode
 	if medicine.StockLevel < quantity {
 		return nil, errors.New("insufficient stock")
 	}
+	// Check if item already exists in cart
+	var existingItem models.CartItem
+	err = config.DB.Where("cart_id = ? AND medicine_id = ?", cart.ID, medicineID).First(&existingItem).Error
+	if err == nil {
+		// Update quantity
+		existingItem.Quantity += quantity
+		config.DB.Save(&existingItem)
+	} else {
+		// Add new item
+		item := models.CartItem{
+			CartID:     cart.ID,
+			MedicineID: medicineID,
+			Name:       medicine.Name,
+			Dosage:     medicine.Dosage,
+			Price:      medicine.Price,
+			Quantity:   quantity,
+		}
+		config.DB.Create(&item)
+	}
