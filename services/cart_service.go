@@ -20,3 +20,9 @@ func (s *CartService) GetOrCreateCart(userID uint) (*models.Cart, error) {
 	}
 	return &cart, nil
 }
+// AddItem adds a medicine to the user's cart
+func (s *CartService) AddItem(userID uint, medicineID uint, quantity int) (*models.Cart, error) {
+	cart, err := s.GetOrCreateCart(userID)
+	if err != nil {
+		return nil, err
+	}
