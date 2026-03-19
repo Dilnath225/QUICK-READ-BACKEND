@@ -28,3 +28,16 @@ func GetNotifications(c *gin.Context) {
 		"unread_count":  unreadCount,
 	})
 }
+// PUT /notifications/:id/read — Mark notification as read
+func MarkNotificationRead(c *gin.Context) {
+	user, _ := c.Get("user")
+	currentUser := user.(models.User)
+	notifID := c.Param("id")
+
+	if err := notifService.MarkAsRead(notifID, currentUser.ID); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Notification not found")
+		return
+	}
+
+	utils.SuccessResponse(c, "Notification marked as read", nil)
+}
