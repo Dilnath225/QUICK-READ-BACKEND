@@ -59,3 +59,18 @@ func (s *CartService) AddItem(userID uint, medicineID uint, quantity int) (*mode
 	config.DB.Preload("Items").First(&cart, cart.ID)
 	return cart, nil
 }
+/ RemoveItem removes an item from the cart
+func (s *CartService) RemoveItem(userID uint, itemID string) (*models.Cart, error) {
+	cart, err := s.GetOrCreateCart(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := config.DB.Where("id = ? AND cart_id = ?", itemID, cart.ID).Delete(&models.CartItem{})
+	if result.RowsAffected == 0 {
+		return nil, errors.New("item not found in cart")
+	}
+
+	config.DB.Preload("Items").First(&cart, cart.ID)
+	return cart, nil
+}
