@@ -55,3 +55,7 @@ func (s *CartService) AddItem(userID uint, medicineID uint, quantity int) (*mode
 		}
 		config.DB.Create(&item)
 	}
+	// Reload cart with items
+	config.DB.Preload("Items").First(&cart, cart.ID)
+	return cart, nil
+}
