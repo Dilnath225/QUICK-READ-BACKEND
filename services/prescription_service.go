@@ -4,6 +4,7 @@ import (
 	"QUICK-READ-BACKEND/config"
 	"QUICK-READ-BACKEND/models"
 	"context"
+	"errors"
 	"fmt"
 	"mime/multipart"
 	"os"
@@ -156,4 +157,36 @@ func (s *PrescriptionService) ProcessPrescription(userID uint, filePath string) 
 	}
 
 	return &prescription, analysisData, nil
+}
+
+// VerifyPrescription allows pharmacist to verify/correct OCR text
+func (s *PrescriptionService) VerifyPrescription(id string, verifiedText string) (*models.Prescription, error) {
+	var prescription models.Prescription
+	if err := config.DB.First(&prescription, id).Error; err != nil {
+		return nil, errors.New("prescription not found")
+	}
+
+	prescription.VerifiedText = verifiedText
+	prescription.Status = "verified"
+	config.DB.Save(&prescription)
+
+	return &prescription, nil
+}
+
+// GetUserPrescriptions returns all prescriptions for a user
+func (s *PrescriptionService) GetUserPrescriptions(userID uint) ([]models.Prescription, error) {
+	var prescriptions []models.Prescription
+	if err := config.DB.Where("user_id = ?", userID).Order("created_at DESC").Find(&prescriptions).Error; err != nil {
+		return nil, err
+	}
+	return prescriptions, nil
+}
+
+// GetPrescription returns a single prescription by ID
+func (s *PrescriptionService) GetPrescription(id string) (*models.Prescription, error) {
+	var prescription models.Prescription
+	if err := config.DB.First(&prescription, id).Error; err != nil {
+		return nil, errors.New("prescription not found")
+	}
+	return &prescription, nil
 }
