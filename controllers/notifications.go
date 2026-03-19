@@ -41,3 +41,15 @@ func MarkNotificationRead(c *gin.Context) {
 
 	utils.SuccessResponse(c, "Notification marked as read", nil)
 }
+// PUT /notifications/read-all — Mark all notifications as read
+func MarkAllNotificationsRead(c *gin.Context) {
+	user, _ := c.Get("user")
+	currentUser := user.(models.User)
+
+	if err := notifService.MarkAllAsRead(currentUser.ID); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, "All notifications marked as read", nil)
+}
