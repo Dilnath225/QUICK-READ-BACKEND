@@ -32,3 +32,7 @@ func (s *CartService) AddItem(userID uint, medicineID uint, quantity int) (*mode
 	if err := config.DB.First(&medicine, medicineID).Error; err != nil {
 		return nil, errors.New("medicine not found")
 	}
+	// Check stock
+	if medicine.StockLevel < quantity {
+		return nil, errors.New("insufficient stock")
+	}
