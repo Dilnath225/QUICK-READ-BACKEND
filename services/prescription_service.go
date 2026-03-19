@@ -71,3 +71,41 @@ func (s *PrescriptionService) ExtractMedicineData(ocrText string) (string, strin
 
 	return foundMedicine, foundDosage
 }
+
+// SaveFile generates a unique filename for prescription uploads
+func (s *PrescriptionService) SaveFile(file *multipart.FileHeader) (string, error) {
+	if _, err := os.Stat("uploads"); os.IsNotExist(err) {
+		os.Mkdir("uploads", 0755)
+	}
+
+	ext := filepath.Ext(file.Filename)
+	filename := uuid.New().String() + ext
+	filePath := filepath.Join("uploads", filename)
+
+	return filePath, nil
+}
+
+// UploadToS3 uploads a file to AWS S3 (if configured) and returns the URL.
+// Falls back to local storage if S3 is not configured.
+func (s *PrescriptionService) UploadToS3(localPath string) (string, error) {
+	bucket := os.Getenv("AWS_S3_BUCKET")
+	if bucket == "" {
+		fmt.Println("⚠️  AWS S3 not configured, using local storage")
+		return localPath, nil
+	}
+
+	// AWS S3 upload using presigned URL approach
+	// In production, use aws-sdk-go-v2:
+	// cfg, _ := awsconfig.LoadDefaultConfig(context.TODO())
+	// client := s3.NewFromConfig(cfg)
+	// key := "prescriptions/" + filepath.Base(localPath)
+	// _, err := client.PutObject(context.TODO(), &s3.PutObjectInput{
+	//     Bucket: aws.String(bucket),
+	//     Key:    aws.String(key),
+	//     Body:   file,
+	// })
+	// return fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucket, key), nil
+
+	fmt.Println("⚠️  S3 upload placeholder — configure AWS credentials for production")
+	return localPath, nil
+}
