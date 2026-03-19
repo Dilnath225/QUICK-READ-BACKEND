@@ -64,3 +64,10 @@ func (s *DashboardService) GetDailyRevenue(pharmacyID uint, days int) ([]Revenue
 
 	return reports, nil
 }
+// GetOrderStats returns order statistics for a pharmacy
+func (s *DashboardService) GetOrderStats(pharmacyID uint) (*OrderStats, error) {
+	stats := &OrderStats{}
+
+	base := config.DB.Model(&models.Order{}).Where("pharmacy_id = ?", pharmacyID)
+
+	base.Count(&stats.TotalOrders)
