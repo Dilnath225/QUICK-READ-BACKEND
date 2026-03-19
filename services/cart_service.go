@@ -83,3 +83,11 @@ func (s *CartService) ClearCart(userID uint) error {
 
 	return config.DB.Where("cart_id = ?", cart.ID).Delete(&models.CartItem{}).Error
 }
+// GetCartTotal calculates the total price of all items in the cart
+func (s *CartService) GetCartTotal(cart *models.Cart) float64 {
+	var total float64
+	for _, item := range cart.Items {
+		total += item.Price * float64(item.Quantity)
+	}
+	return total
+}
