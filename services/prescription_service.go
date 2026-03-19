@@ -4,7 +4,10 @@ import (
 	"QUICK-READ-BACKEND/config"
 	"QUICK-READ-BACKEND/models"
 	"context"
+	"fmt"
+	"mime/multipart"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -108,4 +111,49 @@ func (s *PrescriptionService) UploadToS3(localPath string) (string, error) {
 
 	fmt.Println("⚠️  S3 upload placeholder — configure AWS credentials for production")
 	return localPath, nil
+}
+
+// ProcessPrescription handles OCR, NLP, and DB storage
+func (s *PrescriptionService) ProcessPrescription(userID uint, filePath string) (*models.Prescription, interface{}, error) {
+	// 1. Try uploading to S3
+	imageURL, _ := s.UploadToS3(filePath)
+
+	// 2. Run Real OCR
+	extractedText, err := s.DetectText(filePath)
+	if err != nil {
+		extractedText = "Error in OCR: " + err.Error()
+	}
+
+	// 3. Run NLP / Extraction
+	medName, medDosage := s.ExtractMedicineData(extractedText)
+
+	analysisText := ""
+	if medName != "" {
+		analysisText = "\n\n--- AI Analysis ---\nDetected Medicine: " + medName
+		if medDosage != "" {
+			analysisText += "\nDetected Dosage: " + medDosage
+		}
+	} else {
+		analysisText = "\n\n--- AI Analysis ---\nNo known medicine detected in database."
+	}
+	finalText := extractedText + analysisText
+
+	// 4. Save to DB
+	prescription := models.Prescription{
+		UserID:   userID,
+		ImageURL: imageURL,
+		OCRText:  finalText,
+		Status:   "pending",
+	}
+
+	if err := config.DB.Create(&prescription).Error; err != nil {
+		return nil, nil, err
+	}
+
+	analysisData := map[string]string{
+		"medicine": medName,
+		"dosage":   medDosage,
+	}
+
+	return &prescription, analysisData, nil
 }
