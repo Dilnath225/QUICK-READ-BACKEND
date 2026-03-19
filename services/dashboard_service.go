@@ -71,3 +71,20 @@ func (s *DashboardService) GetOrderStats(pharmacyID uint) (*OrderStats, error) {
 	base := config.DB.Model(&models.Order{}).Where("pharmacy_id = ?", pharmacyID)
 
 	base.Count(&stats.TotalOrders)
+
+config.DB.Model(&models.Order{}).Where("pharmacy_id = ? AND status = ?", pharmacyID, "processing").Count(&stats.Processing)
+	config.DB.Model(&models.Order{}).Where("pharmacy_id = ? AND status = ?", pharmacyID, "ready_to_ship").Count(&stats.ReadyToShip)
+	config.DB.Model(&models.Order{}).Where("pharmacy_id = ? AND status = ?", pharmacyID, "in_transit").Count(&stats.InTransit)
+	config.DB.Model(&models.Order{}).Where("pharmacy_id = ? AND status = ?", pharmacyID, "delivered").Count(&stats.Delivered)
+
+	now := time.Now()
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	weekStart := todayStart.AddDate(0, 0, -7)
+	monthStart := todayStart.AddDate(0, -1, 0)
+
+	config.DB.Model(&models.Order{}).Where("pharmacy_id = ? AND created_at >= ?", pharmacyID, todayStart).Count(&stats.TodayOrders)
+	config.DB.Model(&models.Order{}).Where("pharmacy_id = ? AND created_at >= ?", pharmacyID, weekStart).Count(&stats.WeeklyOrders)
+	config.DB.Model(&models.Order{}).Where("pharmacy_id = ? AND created_at >= ?", pharmacyID, monthStart).Count(&stats.MonthlyOrders)
+
+	return stats, nil
+}	
