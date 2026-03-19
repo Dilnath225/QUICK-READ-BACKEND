@@ -26,3 +26,9 @@ func (s *CartService) AddItem(userID uint, medicineID uint, quantity int) (*mode
 	if err != nil {
 		return nil, err
 	}
+
+	// Get medicine details
+	var medicine models.Medicine
+	if err := config.DB.First(&medicine, medicineID).Error; err != nil {
+		return nil, errors.New("medicine not found")
+	}
