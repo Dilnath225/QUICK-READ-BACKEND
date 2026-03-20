@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	vision "cloud.google.com/go/vision/apiv1"
+	"github.com/google/uuid"
 )
 
 type PrescriptionService struct{}
