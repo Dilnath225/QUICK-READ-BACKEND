@@ -49,3 +49,15 @@ func (s *OrderService) GetDriverOrders(driverID uint) ([]models.Order, error) {
 	}
 	return orders, nil
 }
+
+func (s *OrderService) UpdateLocation(id string, lat, lng float64) error {
+	var order models.Order
+	if err := config.DB.First(&order, id).Error; err != nil {
+		return errors.New("order not found")
+	}
+
+	order.DeliveryLat = lat
+	order.DeliveryLng = lng
+
+	return config.DB.Save(&order).Error
+}
