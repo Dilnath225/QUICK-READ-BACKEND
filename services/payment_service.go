@@ -19,3 +19,16 @@ func init() {
 		stripe.Key = key
 	}
 }
+
+func (s *PaymentService) InitializePayment(orderID string, paymentMethod string) (*models.Order, string, error) {
+	var order models.Order
+	if err := config.DB.First(&order, orderID).Error; err != nil {
+		return nil, "", errors.New("order not found")
+	}
+
+	order.PaymentMethod = paymentMethod
+	order.PaymentStatus = "pending"
+
+	clientSecret := ""
+
+	switch paymentMethod {
