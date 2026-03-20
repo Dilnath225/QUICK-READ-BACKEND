@@ -47,3 +47,11 @@ func CacheSet(key string, value string, ttl time.Duration) error {
 	}
 	return RedisClient.Set(RedisCtx, key, value, ttl).Err()
 }
+
+// CacheGet retrieves a value from Redis
+func CacheGet(key string) (string, error) {
+	if RedisClient == nil {
+		return "", fmt.Errorf("redis not available")
+	}
+	return RedisClient.Get(RedisCtx, key).Result()
+}
