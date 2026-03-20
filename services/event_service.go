@@ -112,3 +112,4 @@ func RegisterDefaultHandlers() {
     })
 
     fmt.Println("✅ Default event handlers registered")
+}
