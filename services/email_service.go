@@ -1,13 +1,41 @@
 package config
 
 import (
-    "context"
-    "fmt"
-    "os"
-    "time"
+	"context"
+	"fmt"
+	"os"
+	"time"
 
-    "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 var RedisClient *redis.Client
 var RedisCtx = context.Background()
+
+// ConnectRedis initializes the Redis client.
+// If Redis is not available, the app continues without caching.
+func ConnectRedis() {
+	addr := os.Getenv("REDIS_ADDR")
+	if addr == "" {
+		addr = "localhost:6379"
+	}
+
+	password := os.Getenv("REDIS_PASSWORD")
+
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: password,
+		DB:       0,
+	})
+
+	ctx, cancel := context.WithTimeout(RedisCtx, 3*time.Second)
+	defer cancel()
+
+	_, err := RedisClient.Ping(ctx).Result()
+	if err != nil {
+		fmt.Println("⚠️  Redis not available, caching disabled:", err)
+		RedisClient = nil
+	} else {
+		fmt.Println("✅ Connected to Redis successfully!")
+	}
+}
