@@ -4,6 +4,7 @@ import (
 	"QUICK-READ-SYSTEM/config"
 	"QUICK-READ-SYSTEM/models"
 	"errors"
+	"fmt"
 )
 
 type MedicineService struct{}
@@ -139,4 +140,13 @@ func (s *MedicineService) GetPriceList(pharmacyID uint, medNames []string) ([]mo
 	}
 
 	return medicines, total, nil
+}
+
+// GetByID retrieves a single medicine by its ID
+func (s *MedicineService) GetByID(id string) (*models.Medicine, error) {
+	var medicine models.Medicine
+	if err := config.DB.First(&medicine, id).Error; err != nil {
+		return nil, fmt.Errorf("medicine not found")
+	}
+	return &medicine, nil
 }
