@@ -86,5 +86,14 @@ func (s *SMSService) SendDeliveryNotification(phoneNumber string, orderID uint, 
 	data.Set("From", fromNumber)
 	data.Set("Body", message)
 
-	return nil
-}
+	req, _ := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode()))
+	req.SetBasicAuth(accountSID, authToken)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
