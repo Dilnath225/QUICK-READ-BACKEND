@@ -79,3 +79,33 @@ func (s *MedicineService) UpdateMedicine(id string, name, dosage string, price f
 
 	return &medicine, nil
 }
+// DeleteMedicine removes a medicine from the database
+func (s *MedicineService) DeleteMedicine(id string) error {
+    result := config.DB.Delete(&models.Medicine{}, id)
+    if result.RowsAffected == 0 {
+        return errors.New("medicine not found")
+    }
+
+    // Invalidate medicine cache
+    config.CacheDeletePattern("cache:*")
+
+    return result.Error
+}
+
+// GetAll retrieves all medicines
+func (s *MedicineService) GetAll() ([]models.Medicine, error) {
+    var medicines []models.Medicine
+    if err := config.DB.Find(&medicines).Error; err != nil {
+        return nil, err
+    }
+    return medicines, nil
+}
+
+// Search retrieves medicines whose name matches the query
+func (s *MedicineService) Search(query string) ([]models.Medicine, error) {
+    var medicines []models.Medicine
+    if err := config.DB.Where("name LIKE ?", "%"+query+"%").Find(&medicines).Error; err != nil {
+        return nil, err
+    }
+    return medicines, nil
+}
