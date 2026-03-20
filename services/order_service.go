@@ -31,3 +31,21 @@ func (s *OrderService) GetOrder(id string) (*models.Order, error) {
 	}
 	return &order, nil
 }
+
+// GetUserOrders retrieves the order history for a patient
+func (s *OrderService) GetUserOrders(userID uint) ([]models.Order, error) {
+	var orders []models.Order
+	if err := config.DB.Where("user_id = ?", userID).Order("created_at DESC").Find(&orders).Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+// GetDriverOrders retrieves the active orders for a delivery driver
+func (s *OrderService) GetDriverOrders(driverID uint) ([]models.Order, error) {
+	var orders []models.Order
+	if err := config.DB.Where("driver_id = ? AND status != ?", driverID, "delivered").Order("created_at DESC").Find(&orders).Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
