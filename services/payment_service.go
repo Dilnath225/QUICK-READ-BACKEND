@@ -93,3 +93,29 @@ func (s *PaymentService) InitializePayment(orderID string, paymentMethod string)
 
 	return &order, clientSecret, nil
 }
+
+// ConfirmPayment is called by Stripe webhook or manual confirmation
+func (s *PaymentService) ConfirmPayment(orderID string) (*models.Order, error) {
+	var order models.Order
+	if err := config.DB.First(&order, orderID).Error; err != nil {
+		return nil, errors.New("order not found")
+	}
+
+	order.PaymentStatus = "paid"
+	if err := config.DB.Save(&order).Error; err != nil {
+		return nil, err
+	}
+
+	// Publish payment completed event
+	if Bus != nil {
+		Bus.Publish(Event{
+			Type: EventPaymentCompleted,
+			Payload: map[string]interface{}{
+				"order_id": order.ID,
+				"user_id":  order.UserID,
+			},
+		})
+	}
+
+	return &order, nil
+}
