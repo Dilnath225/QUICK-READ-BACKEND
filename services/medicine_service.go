@@ -79,33 +79,64 @@ func (s *MedicineService) UpdateMedicine(id string, name, dosage string, price f
 
 	return &medicine, nil
 }
+
 // DeleteMedicine removes a medicine from the database
 func (s *MedicineService) DeleteMedicine(id string) error {
-    result := config.DB.Delete(&models.Medicine{}, id)
-    if result.RowsAffected == 0 {
-        return errors.New("medicine not found")
-    }
+	result := config.DB.Delete(&models.Medicine{}, id)
+	if result.RowsAffected == 0 {
+		return errors.New("medicine not found")
+	}
 
-    // Invalidate medicine cache
-    config.CacheDeletePattern("cache:*")
+	// Invalidate medicine cache
+	config.CacheDeletePattern("cache:*")
 
-    return result.Error
+	return result.Error
 }
 
 // GetAll retrieves all medicines
 func (s *MedicineService) GetAll() ([]models.Medicine, error) {
-    var medicines []models.Medicine
-    if err := config.DB.Find(&medicines).Error; err != nil {
-        return nil, err
-    }
-    return medicines, nil
+	var medicines []models.Medicine
+	if err := config.DB.Find(&medicines).Error; err != nil {
+		return nil, err
+	}
+	return medicines, nil
 }
 
 // Search retrieves medicines whose name matches the query
 func (s *MedicineService) Search(query string) ([]models.Medicine, error) {
-    var medicines []models.Medicine
-    if err := config.DB.Where("name LIKE ?", "%"+query+"%").Find(&medicines).Error; err != nil {
-        return nil, err
-    }
-    return medicines, nil
+	var medicines []models.Medicine
+	if err := config.DB.Where("name LIKE ?", "%"+query+"%").Find(&medicines).Error; err != nil {
+		return nil, err
+	}
+	return medicines, nil
+}
+
+// GetPharmaciesForPrescription finds pharmacies that have the medicines in the prescription
+func (s *MedicineService) GetPharmaciesForPrescription(medNames []string) ([]models.User, error) {
+	var pharmacies []models.User
+	if err := config.DB.Table("users").
+		Select("users.*").
+		Joins("JOIN medicines ON medicines.pharmacy_id = users.id").
+		Where("users.role = ?", "pharmacist").
+		Where("medicines.name IN ?", medNames).
+		Group("users.id").
+		Find(&pharmacies).Error; err != nil {
+		return nil, err
+	}
+	return pharmacies, nil
+}
+
+// GetPriceList returns the prices of the medicines at a specific pharmacy
+func (s *MedicineService) GetPriceList(pharmacyID uint, medNames []string) ([]models.Medicine, float64, error) {
+	var medicines []models.Medicine
+	if err := config.DB.Where("pharmacy_id = ? AND name IN ?", pharmacyID, medNames).Find(&medicines).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var total float64
+	for _, m := range medicines {
+		total += m.Price
+	}
+
+	return medicines, total, nil
 }
