@@ -65,3 +65,26 @@ func (s *SMSService) SendOTP(phoneNumber string, otp string) error {
 	fmt.Println("✅ SMS sent to:", phoneNumber)
 	return nil
 }
+
+// SendDeliveryNotification sends an SMS about delivery status
+func (s *SMSService) SendDeliveryNotification(phoneNumber string, orderID uint, status string) error {
+	accountSID := os.Getenv("TWILIO_ACCOUNT_SID")
+	authToken := os.Getenv("TWILIO_AUTH_TOKEN")
+	fromNumber := os.Getenv("TWILIO_FROM_NUMBER")
+
+	if accountSID == "" {
+		fmt.Println("⚠️  Twilio not configured, skipping SMS")
+		return nil
+	}
+
+	urlStr := fmt.Sprintf("https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json", accountSID)
+
+	message := fmt.Sprintf("Quick-Read: Your order #%d is now %s. Track your order in the app.", orderID, status)
+
+	data := url.Values{}
+	data.Set("To", phoneNumber)
+	data.Set("From", fromNumber)
+	data.Set("Body", message)
+
+	return nil
+}
