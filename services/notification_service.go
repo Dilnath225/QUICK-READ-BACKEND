@@ -32,3 +32,26 @@ func (s *NotificationService) GetUserNotifications(userID uint) ([]models.Notifi
 	}
 	return notifications, nil
 }
+
+// GetUnreadCount returns the count of unread notifications
+func (s *NotificationService) GetUnreadCount(userID uint) (int64, error) {
+	var count int64
+	if err := config.DB.Model(&models.Notification{}).Where("user_id = ? AND is_read = ?", userID, false).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// MarkAsRead marks a notification as read
+func (s *NotificationService) MarkAsRead(notifID string, userID uint) error {
+	result := config.DB.Model(&models.Notification{}).Where("id = ? AND user_id = ?", notifID, userID).Update("is_read", true)
+	if result.RowsAffected == 0 {
+		return config.DB.Error
+	}
+	return result.Error
+}
+
+// MarkAllAsRead marks all notifications for a user as read
+func (s *NotificationService) MarkAllAsRead(userID uint) error {
+	return config.DB.Model(&models.Notification{}).Where("user_id = ? AND is_read = ?", userID, false).Update("is_read", true).Error
+}
