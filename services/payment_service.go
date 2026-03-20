@@ -12,3 +12,10 @@ import (
 )
 
 type PaymentService struct{}
+
+func init() {
+	key := os.Getenv("STRIPE_SECRET_KEY")
+	if key != "" {
+		stripe.Key = key
+	}
+}
