@@ -72,3 +72,22 @@ func (s *NotificationService) NotifyInventoryAlert(pharmacistID uint, medicineNa
 func (s *NotificationService) NotifyDeliveryUpdate(userID uint, message string) {
 	s.Create(userID, "Delivery Update", message, "delivery_update")
 }
+
+func uintToStr(n uint) string {
+	s := ""
+	if n == 0 {
+		return "0"
+	}
+	for n > 0 {
+		s = string(rune('0'+n%10)) + s
+		n /= 10
+	}
+	return s
+}
+
+func intToStr(n int) string {
+	if n < 0 {
+		return "-" + uintToStr(uint(-n))
+	}
+	return uintToStr(uint(n))
+}
