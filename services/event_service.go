@@ -47,3 +47,25 @@ func InitEventBus() {
 	}
 	fmt.Println("✅ Event bus initialized")
 }
+
+// Subscribe registers a handler for an event type
+func (eb *EventBus) Subscribe(eventType EventType, handler EventHandler) {
+	eb.mu.Lock()
+	defer eb.mu.Unlock()
+	eb.handlers[eventType] = append(eb.handlers[eventType], handler)
+}
+
+// Publish fires an event to all subscribed handlers (async via goroutines)
+func (eb *EventBus) Publish(event Event) {
+	eb.mu.RLock()
+	defer eb.mu.RUnlock()
+
+	handlers, exists := eb.handlers[event.Type]
+	if !exists {
+		return
+	}
+
+	for _, handler := range handlers {
+		go handler(event) // Non-blocking: each handler runs in its own goroutine
+	}
+}
