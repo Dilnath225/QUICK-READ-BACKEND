@@ -61,3 +61,44 @@ func (s *OrderService) UpdateLocation(id string, lat, lng float64) error {
 
 	return config.DB.Save(&order).Error
 }
+
+// UpdateStatus moves an order through the 5 UI delivery stages:
+// processing → ready_to_ship → pick_up → in_transit → out_of_delivery → review → delivered
+func (s *OrderService) UpdateStatus(id string, newStatus string) (*models.Order, error) {
+	validStatuses := map[string]bool{
+		"processing":      true,
+		"ready_to_ship":   true,
+		"pick_up":         true,
+		"in_transit":      true,
+		"out_of_delivery": true,
+		"review":          true,
+		"delivered":       true,
+	}
+
+	if !validStatuses[newStatus] {
+		return nil, errors.New("invalid status: must be one of processing, ready_to_ship, pick_up, in_transit, out_of_delivery, review, delivered")
+	}
+
+	var order models.Order
+	if err := config.DB.First(&order, id).Error; err != nil {
+		return nil, errors.New("order not found")
+	}
+
+	order.Status = newStatus
+	if err := config.DB.Save(&order).Error; err != nil {
+		return nil, err
+	}
+
+	// Publish delivery completion event
+	if newStatus == "delivered" && Bus != nil {
+		Bus.Publish(Event{
+			Type: EventDeliveryCompleted,
+			Payload: map[string]interface{}{
+				"order_id": order.ID,
+				"user_id":  order.UserID,
+			},
+		})
+	}
+
+	return &order, nil
+}
