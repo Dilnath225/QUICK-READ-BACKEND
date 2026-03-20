@@ -55,3 +55,20 @@ func (s *NotificationService) MarkAsRead(notifID string, userID uint) error {
 func (s *NotificationService) MarkAllAsRead(userID uint) error {
 	return config.DB.Model(&models.Notification{}).Where("user_id = ? AND is_read = ?", userID, false).Update("is_read", true).Error
 }
+
+// --- Convenience methods to send specific notification types ---
+
+// NotifyOrderUpdate sends an order update notification
+func (s *NotificationService) NotifyOrderUpdate(userID uint, orderID uint, status string) {
+	s.Create(userID, "Order Update", "Your order #"+uintToStr(orderID)+" status: "+status, "order_update")
+}
+
+// NotifyInventoryAlert sends a low-stock alert to a pharmacist
+func (s *NotificationService) NotifyInventoryAlert(pharmacistID uint, medicineName string, stockLevel int) {
+	s.Create(pharmacistID, "Low Stock Alert", medicineName+" stock is low ("+intToStr(stockLevel)+" remaining)", "inventory_alert")
+}
+
+// NotifyDeliveryUpdate sends a delivery update to the customer
+func (s *NotificationService) NotifyDeliveryUpdate(userID uint, message string) {
+	s.Create(userID, "Delivery Update", message, "delivery_update")
+}
