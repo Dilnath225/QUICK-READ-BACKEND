@@ -69,3 +69,24 @@ func (eb *EventBus) Publish(event Event) {
 		go handler(event) // Non-blocking: each handler runs in its own goroutine
 	}
 }
+
+// RegisterDefaultHandlers sets up the default event handling pipeline
+func RegisterDefaultHandlers() {
+	notifService := &NotificationService{}
+
+	// When an order is created, notify the pharmacy
+	Bus.Subscribe(EventOrderCreated, func(e Event) {
+		pharmacyID, _ := e.Payload["pharmacy_id"].(uint)
+		orderID, _ := e.Payload["order_id"].(uint)
+		if pharmacyID > 0 {
+			notifService.Create(pharmacyID, "New Order", "New order #"+uintToStr(orderID)+" received", "order_update")
+		}
+	})
+
+	// When payment completes, update order and notify
+	Bus.Subscribe(EventPaymentCompleted, func(e Event) {
+		userID, _ := e.Payload["user_id"].(uint)
+		orderID, _ := e.Payload["order_id"].(uint)
+		notifService.NotifyOrderUpdate(userID, orderID, "Payment confirmed")
+	})
+}
