@@ -39,3 +39,11 @@ func ConnectRedis() {
 		fmt.Println("✅ Connected to Redis successfully!")
 	}
 }
+
+// CacheSet stores a value in Redis with a TTL
+func CacheSet(key string, value string, ttl time.Duration) error {
+	if RedisClient == nil {
+		return nil
+	}
+	return RedisClient.Set(RedisCtx, key, value, ttl).Err()
+}
