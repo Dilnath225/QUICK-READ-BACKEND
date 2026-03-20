@@ -89,4 +89,26 @@ func RegisterDefaultHandlers() {
 		orderID, _ := e.Payload["order_id"].(uint)
 		notifService.NotifyOrderUpdate(userID, orderID, "Payment confirmed")
 	})
-}
+
+    // When delivery is assigned, notify the customer
+    Bus.Subscribe(EventDeliveryAssigned, func(e Event) {
+        userID, _ := e.Payload["user_id"].(uint)
+        notifService.NotifyDeliveryUpdate(userID, "A driver has been assigned to your order")
+    })
+
+    // When delivery completes, update driver stats
+    Bus.Subscribe(EventDeliveryCompleted, func(e Event) {
+        userID, _ := e.Payload["user_id"].(uint)
+        orderID, _ := e.Payload["order_id"].(uint)
+        notifService.NotifyOrderUpdate(userID, orderID, "Delivered successfully!")
+    })
+
+    // When stock is low, alert the pharmacist
+    Bus.Subscribe(EventStockLow, func(e Event) {
+        pharmacistID, _ := e.Payload["pharmacist_id"].(uint)
+        medicineName, _ := e.Payload["medicine_name"].(string)
+        stockLevel, _ := e.Payload["stock_level"].(int)
+        notifService.NotifyInventoryAlert(pharmacistID, medicineName, stockLevel)
+    })
+
+    fmt.Println("✅ Default event handlers registered")
