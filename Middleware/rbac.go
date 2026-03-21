@@ -19,3 +19,11 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 		}
 
 		user := userVal.(models.User)
+
+		for _, role := range allowedRoles {
+			if user.Role == role {
+
+				c.Next()
+				return
+			}
+		}
