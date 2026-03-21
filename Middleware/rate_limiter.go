@@ -73,12 +73,26 @@ func (rl *RateLimiter) allow(ip string) bool {
 	}
 	v.lastCheck = now
 
-	// Commit 10: allow request if token available
 	if v.tokens >= 1 {
 		v.tokens--
 		return true
 	}
 
-	// Commit 11: deny request if token bucket empty
 	return false
+}
+
+// Middleware returns a Gin middleware that rate-limits requests per client IP.
+func (rl *RateLimiter) Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+
+		if !rl.allow(ip) {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"error": "Rate limit exceeded. Please try again later.",
+			})
+			return
+		}
+
+		c.Next()
+	}
 }
