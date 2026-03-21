@@ -23,3 +23,16 @@ type RateLimiter struct {
 	burst      int     // max tokens
 	cleanupInt time.Duration
 }
+
+// NewRateLimiter creates a rate limiter. rate = requests per second, burst = max burst size.
+func NewRateLimiter(rate float64, burst int) *RateLimiter {
+	rl := &RateLimiter{
+		visitors:   make(map[string]*visitor),
+		rate:       rate,
+		burst:      burst,
+		cleanupInt: 3 * time.Minute,
+	}
+
+	go rl.cleanupLoop()
+	return rl
+}
