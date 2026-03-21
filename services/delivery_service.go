@@ -61,3 +61,14 @@ return nil, err
 
 return &driver, nil
 }
+// ToggleAvailability sets the driver's availability status
+func (s *DeliveryService) ToggleAvailability(userID uint, available bool) (*models.DeliveryDriver, error) {
+var driver models.DeliveryDriver
+if err := config.DB.Where("user_id = ?", userID).First(&driver).Error; err != nil {
+return nil, errors.New("driver profile not found")
+}
+
+driver.IsAvailable = available
+config.DB.Save(&driver)
+return &driver, nil
+}
