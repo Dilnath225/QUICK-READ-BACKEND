@@ -52,3 +52,8 @@ func CacheResponse(ttl time.Duration) gin.HandlerFunc {
 		c.Header("X-Cache", "MISS")
 	}
 }
+
+func hashKey(s string) string {
+	h := sha256.Sum256([]byte(s))
+	return fmt.Sprintf("%x", h[:8])
+}
