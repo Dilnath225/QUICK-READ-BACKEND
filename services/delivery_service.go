@@ -72,8 +72,21 @@ driver.IsAvailable = available
 config.DB.Save(&driver)
 return &driver, nil
 }
+
 // UpdateDriverLocation 
 func (s *DeliveryService) UpdateDriverLocation(userID uint, lat, lng float64) error {
 return config.DB.Model(&models.DeliveryDriver{}).Where("user_id = ?", userID).
 Updates(map[string]interface{}{"current_lat": lat, "current_lng": lng}).Error
+}
+
+// AssignDriver finds the closest available driver and assigns them to an order
+func (s *DeliveryService) AssignDriver(orderID string) (*models.DeliveryDriver, error) {
+// Get the order
+var order models.Order
+if err := config.DB.First(&order, orderID).Error; err != nil {
+return nil, errors.New("order not found")
+}
+
+if order.DriverID != 0 {
+return nil, errors.New("order already assigned to a driver")
 }
