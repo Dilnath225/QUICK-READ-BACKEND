@@ -154,3 +154,12 @@ Note: note,
 }
 config.DB.Create(&history)
 }
+
+// GetDeliveryHistory returns all delivery history for a driver
+func (s *DeliveryService) GetDeliveryHistory(driverID uint) ([]models.DeliveryHistory, error) {
+var history []models.DeliveryHistory
+if err := config.DB.Where("driver_id = ?", driverID).Order("created_at DESC").Find(&history).Error; err != nil {
+return nil, err
+}
+return history, nil
+}
