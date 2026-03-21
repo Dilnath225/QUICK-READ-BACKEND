@@ -134,3 +134,23 @@ EstimatedMin: int(bestDist / 0.5), // rough estimate: 0.5 km/min
 Status: "active",
 }
 config.DB.Create(&route)
+
+// Log delivery history
+s.LogDeliveryEvent(order.ID, bestDriver.UserID, "assigned", bestDriver.CurrentLat, bestDriver.CurrentLng, "Driver assigned to order")
+
+return bestDriver, nil
+}
+
+// LogDeliveryEvent records a delivery history entry
+func (s *DeliveryService) LogDeliveryEvent(orderID, driverID uint, status string, lat, lng float64, note string) {
+history := models.DeliveryHistory{
+OrderID: orderID,
+DriverID: driverID,
+Status: status,
+Latitude: lat,
+Longitude: lng,
+Timestamp: time.Now(),
+Note: note,
+}
+config.DB.Create(&history)
+}
