@@ -45,3 +45,5 @@ return &driver, nil
 func (s *DeliveryService) UpdateDriverProfile(userID uint, vehicleType, licensePlate string) (*models.DeliveryDriver, error) {
 var driver models.DeliveryDriver
 if err := config.DB.Where("user_id = ?", userID).First(&driver).Error; err != nil {
+return nil, errors.New("driver profile not found")
+}
