@@ -33,3 +33,14 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 		})
 	}
 }
+
+func joinRoles(roles []string) string {
+	result := ""
+	for i, r := range roles {
+		if i > 0 {
+			result += ", "
+		}
+		result += r
+	}
+	return result
+}
