@@ -64,3 +64,21 @@ func (rl *RateLimiter) allow(ip string) bool {
 		}
 		return true
 	}
+
+	// Add tokens based on elapsed time
+	elapsed := now.Sub(v.lastCheck).Seconds()
+	v.tokens += elapsed * rl.rate
+	if v.tokens > float64(rl.burst) {
+		v.tokens = float64(rl.burst)
+	}
+	v.lastCheck = now
+
+	// Commit 10: allow request if token available
+	if v.tokens >= 1 {
+		v.tokens--
+		return true
+	}
+
+	// Commit 11: deny request if token bucket empty
+	return false
+}
