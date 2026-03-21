@@ -17,3 +17,11 @@ var existing models.DeliveryDriver
 if err := config.DB.Where("user_id = ?", userID).First(&existing).Error; err == nil {
 return nil, errors.New("driver profile already exists")
 }
+
+driver := models.DeliveryDriver{
+UserID: userID,
+VehicleType: vehicleType,
+LicensePlate: licensePlate,
+IsAvailable: true,
+Rating: 5.0,
+}
