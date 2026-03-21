@@ -20,3 +20,12 @@ func CacheResponse(ttl time.Duration) gin.HandlerFunc {
 			c.Next()
 			return
 		}
+
+		// Skip if Redis is not available
+		if config.RedisClient == nil {
+			c.Next()
+			return
+		}
+
+		// Generate cache key from the full URL
+		key := "cache:" + hashKey(c.Request.RequestURI)
