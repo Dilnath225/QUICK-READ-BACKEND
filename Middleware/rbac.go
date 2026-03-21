@@ -27,3 +27,9 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 				return
 			}
 		}
+
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"error": "Access denied. Required role(s): " + joinRoles(allowedRoles),
+		})
+	}
+}
