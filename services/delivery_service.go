@@ -98,3 +98,17 @@ config.DB.Where("is_available = ?", true).Find(&drivers)
 if len(drivers) == 0 {
 return nil, errors.New("no available drivers at the moment")
 }
+// Find the closest driver (simple Haversine distance)
+var bestDriver *models.DeliveryDriver
+bestDist := math.MaxFloat64
+
+for i := range drivers {
+d := haversineDistance(
+drivers[i].CurrentLat, drivers[i].CurrentLng,
+order.DeliveryLat, order.DeliveryLng,
+)
+if d < bestDist {
+bestDist = d
+bestDriver = &drivers[i]
+}
+}
