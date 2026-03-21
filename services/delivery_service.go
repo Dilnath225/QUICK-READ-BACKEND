@@ -47,3 +47,17 @@ var driver models.DeliveryDriver
 if err := config.DB.Where("user_id = ?", userID).First(&driver).Error; err != nil {
 return nil, errors.New("driver profile not found")
 }
+updates := map[string]interface{}{}
+if vehicleType != "" {
+updates["vehicle_type"] = vehicleType
+}
+if licensePlate != "" {
+updates["license_plate"] = licensePlate
+}
+
+if err := config.DB.Model(&driver).Updates(updates).Error; err != nil {
+return nil, err
+}
+
+return &driver, nil
+}
