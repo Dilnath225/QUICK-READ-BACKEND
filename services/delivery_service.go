@@ -29,3 +29,6 @@ Rating: 5.0,
 if err := config.DB.Create(&driver).Error; err != nil {
 return nil, err
 }
+
+return &driver, nil
+}
