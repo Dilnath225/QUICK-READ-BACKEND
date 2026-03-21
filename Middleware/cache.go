@@ -29,3 +29,12 @@ func CacheResponse(ttl time.Duration) gin.HandlerFunc {
 
 		// Generate cache key from the full URL
 		key := "cache:" + hashKey(c.Request.RequestURI)
+
+		// Try to get from cache
+		cached, err := config.CacheGet(key)
+		if err == nil && cached != "" {
+			c.Header("X-Cache", "HIT")
+			c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(cached))
+			c.Abort()
+			return
+		}
