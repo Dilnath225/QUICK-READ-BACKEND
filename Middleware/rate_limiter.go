@@ -49,3 +49,18 @@ func (rl *RateLimiter) cleanupLoop() {
 		rl.mu.Unlock()
 	}
 }
+
+func (rl *RateLimiter) allow(ip string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	v, exists := rl.visitors[ip]
+	now := time.Now()
+
+	if !exists {
+		rl.visitors[ip] = &visitor{
+			tokens:    float64(rl.burst) - 1,
+			lastCheck: now,
+		}
+		return true
+	}
