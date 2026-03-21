@@ -112,3 +112,25 @@ bestDist = d
 bestDriver = &drivers[i]
 }
 }
+// Assign driver to order
+order.DriverID = bestDriver.UserID
+order.Status = "pick_up"
+config.DB.Save(&order)
+
+// Mark driver as unavailable
+bestDriver.IsAvailable = false
+config.DB.Save(bestDriver)
+
+// Create route
+route := models.Route{
+OrderID: order.ID,
+DriverID: bestDriver.UserID,
+StartLat: bestDriver.CurrentLat,
+StartLng: bestDriver.CurrentLng,
+EndLat: order.DeliveryLat,
+EndLng: order.DeliveryLng,
+Distance: bestDist,
+EstimatedMin: int(bestDist / 0.5), // rough estimate: 0.5 km/min
+Status: "active",
+}
+config.DB.Create(&route)
