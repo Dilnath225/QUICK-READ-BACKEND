@@ -32,3 +32,12 @@ return nil, err
 
 return &driver, nil
 }
+
+// GetDriverProfile returns the driver profile for a user
+func (s *DeliveryService) GetDriverProfile(userID uint) (*models.DeliveryDriver, error) {
+var driver models.DeliveryDriver
+if err := config.DB.Where("user_id = ?", userID).First(&driver).Error; err != nil {
+return nil, errors.New("driver profile not found")
+}
+return &driver, nil
+}
