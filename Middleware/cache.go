@@ -57,3 +57,14 @@ func hashKey(s string) string {
 	h := sha256.Sum256([]byte(s))
 	return fmt.Sprintf("%x", h[:8])
 }
+
+// responseCapture wraps gin.ResponseWriter to capture the response body
+type responseCapture struct {
+	gin.ResponseWriter
+	body []byte
+}
+
+func (w *responseCapture) Write(b []byte) (int, error) {
+	w.body = append(w.body, b...)
+	return w.ResponseWriter.Write(b)
+}
