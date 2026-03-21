@@ -1,10 +1,11 @@
 package services
 
 import (
-	"QUICK-READ-SYSTEM/config"
-	"QUICK-READ-SYSTEM/models"
+	"QUICK-READ-BACKEND/config"
+	"QUICK-READ-BACKEND/models"
 	"errors"
 )
+
 type CartService struct{}
 
 // GetOrCreateCart finds the user's cart or creates a new one
@@ -20,6 +21,7 @@ func (s *CartService) GetOrCreateCart(userID uint) (*models.Cart, error) {
 	}
 	return &cart, nil
 }
+
 // AddItem adds a medicine to the user's cart
 func (s *CartService) AddItem(userID uint, medicineID uint, quantity int) (*models.Cart, error) {
 	cart, err := s.GetOrCreateCart(userID)
@@ -59,7 +61,8 @@ func (s *CartService) AddItem(userID uint, medicineID uint, quantity int) (*mode
 	config.DB.Preload("Items").First(&cart, cart.ID)
 	return cart, nil
 }
-/ RemoveItem removes an item from the cart
+
+// RemoveItem removes an item from the cart
 func (s *CartService) RemoveItem(userID uint, itemID string) (*models.Cart, error) {
 	cart, err := s.GetOrCreateCart(userID)
 	if err != nil {
@@ -74,7 +77,8 @@ func (s *CartService) RemoveItem(userID uint, itemID string) (*models.Cart, erro
 	config.DB.Preload("Items").First(&cart, cart.ID)
 	return cart, nil
 }
-/ ClearCart removes all items from the cart
+
+// ClearCart removes all items from the cart
 func (s *CartService) ClearCart(userID uint) error {
 	cart, err := s.GetOrCreateCart(userID)
 	if err != nil {
@@ -83,6 +87,7 @@ func (s *CartService) ClearCart(userID uint) error {
 
 	return config.DB.Where("cart_id = ?", cart.ID).Delete(&models.CartItem{}).Error
 }
+
 // GetCartTotal calculates the total price of all items in the cart
 func (s *CartService) GetCartTotal(cart *models.Cart) float64 {
 	var total float64
