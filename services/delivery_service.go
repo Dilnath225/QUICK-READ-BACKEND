@@ -90,3 +90,11 @@ return nil, errors.New("order not found")
 if order.DriverID != 0 {
 return nil, errors.New("order already assigned to a driver")
 }
+
+// Get all available drivers
+var drivers []models.DeliveryDriver
+config.DB.Where("is_available = ?", true).Find(&drivers)
+
+if len(drivers) == 0 {
+return nil, errors.New("no available drivers at the moment")
+}
