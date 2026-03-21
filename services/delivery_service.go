@@ -163,3 +163,20 @@ return nil, err
 }
 return history, nil
 }
+// GetOrderDeliveryHistory returns delivery history for a specific order
+func (s *DeliveryService) GetOrderDeliveryHistory(orderID string) ([]models.DeliveryHistory, error) {
+var history []models.DeliveryHistory
+if err := config.DB.Where("order_id = ?", orderID).Order("created_at ASC").Find(&history).Error; err != nil {
+return nil, err
+}
+return history, nil
+}
+
+// GetRoute returns the route for an order
+func (s *DeliveryService) GetRoute(orderID string) (*models.Route, error) {
+var route models.Route
+if err := config.DB.Where("order_id = ?", orderID).First(&route).Error; err != nil {
+return nil, errors.New("route not found")
+}
+return &route, nil
+}
