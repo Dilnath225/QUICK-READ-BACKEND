@@ -38,3 +38,17 @@ func CacheResponse(ttl time.Duration) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		// Use a response writer wrapper to capture the response
+		w := &responseCapture{ResponseWriter: c.Writer, body: []byte{}}
+		c.Writer = w
+
+		c.Next()
+
+		// Only cache successful responses
+		if c.Writer.Status() == http.StatusOK && len(w.body) > 0 {
+			_ = config.CacheSet(key, string(w.body), ttl)
+		}
+		c.Header("X-Cache", "MISS")
+	}
+}
