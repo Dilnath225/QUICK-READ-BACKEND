@@ -36,3 +36,16 @@ func NewRateLimiter(rate float64, burst int) *RateLimiter {
 	go rl.cleanupLoop()
 	return rl
 }
+
+func (rl *RateLimiter) cleanupLoop() {
+	for {
+		time.Sleep(rl.cleanupInt)
+		rl.mu.Lock()
+		for ip, v := range rl.visitors {
+			if time.Since(v.lastCheck) > rl.cleanupInt {
+				delete(rl.visitors, ip)
+			}
+		}
+		rl.mu.Unlock()
+	}
+}
