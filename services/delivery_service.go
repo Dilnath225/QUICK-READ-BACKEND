@@ -72,3 +72,8 @@ driver.IsAvailable = available
 config.DB.Save(&driver)
 return &driver, nil
 }
+// UpdateDriverLocation 
+func (s *DeliveryService) UpdateDriverLocation(userID uint, lat, lng float64) error {
+return config.DB.Model(&models.DeliveryDriver{}).Where("user_id = ?", userID).
+Updates(map[string]interface{}{"current_lat": lat, "current_lng": lng}).Error
+}
