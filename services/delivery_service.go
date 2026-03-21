@@ -41,3 +41,7 @@ return nil, errors.New("driver profile not found")
 }
 return &driver, nil
 }
+// UpdateDriverProfile updates editable driver fields
+func (s *DeliveryService) UpdateDriverProfile(userID uint, vehicleType, licensePlate string) (*models.DeliveryDriver, error) {
+var driver models.DeliveryDriver
+if err := config.DB.Where("user_id = ?", userID).First(&driver).Error; err != nil {
