@@ -97,3 +97,36 @@ func UpdateProfile(c *gin.Context) {
 
 	utils.SuccessResponse(c, "Profile updated", updatedUser)
 }
+
+// POST /verify-otp
+func VerifyOTP(c *gin.Context) {
+	var input struct {
+		Email string `json:"email" binding:"required"`
+		OTP   string `json:"otp" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Placeholder for OTP verification logic
+	// In a real system, would check against a Redis/DB stored OTP
+	utils.SuccessResponse(c, "OTP verified successfully", nil)
+}
+
+// GET /users/profile
+func GetProfile(c *gin.Context) {
+	userVal, _ := c.Get("user")
+	currentUser := userVal.(models.User)
+
+	utils.SuccessResponse(c, "Profile retrieved", currentUser)
+}
+
+// POST /users/profile-picture
+func UploadProfilePicture(c *gin.Context) {
+	// Placeholder for profile picture upload logic
+	utils.SuccessResponse(c, "Profile picture uploaded", gin.H{
+		"url": "https://example.com/profile.jpg",
+	})
+}
