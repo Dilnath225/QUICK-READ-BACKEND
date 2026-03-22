@@ -57,3 +57,25 @@ func GetCart(c *gin.Context) {
 		"total": total,
 	})
 }
+
+// DELETE /cart/:id — Remove item from cart
+func RemoveFromCart(c *gin.Context) {
+
+	user, _ := c.Get("user")
+	currentUser := user.(models.User)
+
+	itemID := c.Param("id")
+
+	cart, err := cartService.RemoveItem(currentUser.ID, itemID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	total := cartService.GetCartTotal(cart)
+
+	utils.SuccessResponse(c, "Item removed from cart", gin.H{
+		"cart":  cart,
+		"total": total,
+	})
+}
