@@ -1,8 +1,8 @@
 package services
 
 import (
-	"QUICK-READ-SYSTEM/config"
-	"QUICK-READ-SYSTEM/models"
+	"QUICK-READ-BACKEND/config"
+	"QUICK-READ-BACKEND/models"
 	"errors"
 )
 
@@ -114,4 +114,12 @@ func (s *OrderService) UpdateStatus(id string, newStatus string) (*models.Order,
 	}
 
 	return &order, nil
+}
+// GetPharmacyOrders retrieves all orders belonging to a specific pharmacy
+func (s *OrderService) GetPharmacyOrders(pharmacyID uint) ([]models.Order, error) {
+	var orders []models.Order
+	if err := config.DB.Where("pharmacy_id = ?", pharmacyID).Order("created_at DESC").Find(&orders).Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
 }
