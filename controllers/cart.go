@@ -18,3 +18,22 @@ import (
 		MedicineID uint `json:"medicine_id" binding:"required"`
 		Quantity   int  `json:"quantity" binding:"required"`
 	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	cart, err := cartService.AddItem(currentUser.ID, input.MedicineID, input.Quantity)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	total := cartService.GetCartTotal(cart)
+
+	utils.SuccessResponse(c, "Item added to cart", gin.H{
+		"cart":  cart,
+		"total": total,
+	})
+}
