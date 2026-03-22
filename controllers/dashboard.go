@@ -25,3 +25,17 @@ func GetDailyRevenue(c *gin.Context) {
 			days = parsed
 		}
 	}
+
+	reports, err := dashboardService.GetDailyRevenue(currentUser.ID, days)
+	if err != nil {
+
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, "Revenue report", gin.H{
+		"pharmacy_id": currentUser.ID,
+		"days":        days,
+		"reports":     reports,
+	})
+}
