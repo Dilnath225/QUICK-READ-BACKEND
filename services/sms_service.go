@@ -97,3 +97,5 @@ func (s *SMSService) SendDeliveryNotification(phoneNumber string, orderID uint, 
 	}
 	defer resp.Body.Close()
 
+	return nil
+}
