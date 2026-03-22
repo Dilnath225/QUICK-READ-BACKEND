@@ -1,9 +1,8 @@
-package pkg
+package response
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type Response struct {

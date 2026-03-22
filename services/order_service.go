@@ -50,6 +50,15 @@ func (s *OrderService) GetDriverOrders(driverID uint) ([]models.Order, error) {
 	return orders, nil
 }
 
+// GetPharmacyOrders retrieves all orders for a specific pharmacy
+func (s *OrderService) GetPharmacyOrders(pharmacyID uint) ([]models.Order, error) {
+	var orders []models.Order
+	if err := config.DB.Where("pharmacy_id = ?", pharmacyID).Order("created_at DESC").Find(&orders).Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
 func (s *OrderService) UpdateLocation(id string, lat, lng float64) error {
 	var order models.Order
 	if err := config.DB.First(&order, id).Error; err != nil {
@@ -88,6 +97,10 @@ func (s *OrderService) UpdateStatus(id string, newStatus string) (*models.Order,
 	if err := config.DB.Save(&order).Error; err != nil {
 		return nil, err
 	}
+
+	// Trigger Notification
+	notifService := &NotificationService{}
+	notifService.NotifyOrderUpdate(order.UserID, order.ID, newStatus)
 
 	// Publish delivery completion event
 	if newStatus == "delivered" && Bus != nil {

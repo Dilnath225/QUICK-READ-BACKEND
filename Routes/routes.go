@@ -49,9 +49,9 @@ func SetupRouter(r *gin.Engine) {
 			patientRoutes := authorized.Group("/")
 			patientRoutes.Use(middleware.RequireRole("patient"))
 			{
-				// Prescriptions
-				patientRoutes.POST("/prescriptions", controllers.UploadPrescriptionImage)
-				patientRoutes.GET("/prescriptions", controllers.GetUserPrescriptions)
+				// Prescriptions (Both Patients and Pharmacists can upload)
+				authorized.POST("/prescriptions", middleware.RequireRole("patient", "pharmacist"), controllers.UploadPrescriptionImage)
+				authorized.GET("/prescriptions", middleware.RequireRole("patient", "pharmacist"), controllers.GetUserPrescriptions)
 
 				// Cart
 				patientRoutes.POST("/cart", controllers.AddToCart)

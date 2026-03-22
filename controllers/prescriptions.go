@@ -9,18 +9,33 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"log"
 )
 
 var prescriptionService = new(services.PrescriptionService)
 
 // POST /upload-prescription
 func UploadPrescriptionImage(c *gin.Context) {
-	// 1. Get the file from the request
+	log.Printf("[Controller] Request Content-Type: %s", c.GetHeader("Content-Type"))
+	
+	// Print all form keys for debugging
+	form, _ := c.MultipartForm()
+	if form != nil {
+		for key := range form.File {
+			log.Printf("[Controller] Found file key: %s", key)
+		}
+		for key := range form.Value {
+			log.Printf("[Controller] Found value key: %s", key)
+		}
+	}
+
 	file, err := c.FormFile("file") // The frontend must send form-data with key "file"
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "No file uploaded")
+		log.Printf("[Controller] Failed to get file from form: %v", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "No file uploaded: "+err.Error())
 		return
 	}
+	log.Printf("[Controller] Received file: %s, size: %d", file.Filename, file.Size)
 
 	// 2. Save the file locally
 	// Use UUID for unique filenames

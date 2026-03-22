@@ -1,80 +1,92 @@
 package services
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
-var RedisClient *redis.Client
-var RedisCtx = context.Background()
+type EmailService struct{}
 
-// ConnectRedis initializes the Redis client.
-// If Redis is not available, the app continues without caching.
-func ConnectRedis() {
-	addr := os.Getenv("REDIS_ADDR")
-	if addr == "" {
-		addr = "localhost:6379"
+// SendOTP sends an OTP verification email
+func (s *EmailService) SendOTP(toEmail string, otp string) error {
+	subject := "Quick-Read: Your OTP Verification Code"
+	body := fmt.Sprintf(`
+		<html>
+		<body style="font-family: Arial, sans-serif; padding: 20px;">
+			<h2 style="color: #2563EB;">Quick-Read Verification</h2>
+			<p>Your one-time verification code is:</p>
+			<h1 style="color: #1E40AF; letter-spacing: 8px; font-size: 36px;">%s</h1>
+			<p>This code expires in 10 minutes.</p>
+			<p style="color: #6B7280; font-size: 12px;">If you didn't request this code, please ignore this email.</p>
+		</body>
+		</html>
+	`, otp)
+
+	return s.sendEmail(toEmail, subject, body)
+}
+
+// SendOrderReceipt sends a digital receipt via email
+func (s *EmailService) SendOrderReceipt(toEmail string, orderID uint, totalAmount float64, deliveryFee float64, paymentMethod string) error {
+	subject := fmt.Sprintf("Quick-Read: Order #%d Receipt", orderID)
+	body := fmt.Sprintf(`
+		<html>
+		<body style="font-family: Arial, sans-serif; padding: 20px;">
+			<h2 style="color: #2563EB;">Quick-Read Digital Receipt</h2>
+			<hr>
+			<table style="width: 100%%; border-collapse: collapse;">
+				<tr><td style="padding: 8px;"><strong>Order ID:</strong></td><td>#%d</td></tr>
+				<tr><td style="padding: 8px;"><strong>Subtotal:</strong></td><td>Rs. %.2f</td></tr>
+				<tr><td style="padding: 8px;"><strong>Delivery Fee:</strong></td><td>Rs. %.2f</td></tr>
+				<tr style="background: #F3F4F6;"><td style="padding: 8px;"><strong>Total:</strong></td><td><strong>Rs. %.2f</strong></td></tr>
+				<tr><td style="padding: 8px;"><strong>Payment:</strong></td><td>%s</td></tr>
+			</table>
+			<hr>
+			<p style="color: #6B7280; font-size: 12px;">Thank you for choosing Quick-Read Pharmacy.</p>
+		</body>
+		</html>
+	`, orderID, totalAmount, deliveryFee, totalAmount+deliveryFee, paymentMethod)
+
+	return s.sendEmail(toEmail, subject, body)
+}
+
+// sendEmail is the internal SendGrid API sender
+func (s *EmailService) sendEmail(to, subject, htmlBody string) error {
+	apiKey := os.Getenv("SENDGRID_API_KEY")
+	fromAddress := os.Getenv("SENDGRID_FROM_EMAIL")
+
+	if apiKey == "" || fromAddress == "" {
+		fmt.Println("⚠️  Email not configured (SENDGRID_API_KEY or SENDGRID_FROM_EMAIL missing), skipping email send")
+		return nil
 	}
 
-	password := os.Getenv("REDIS_PASSWORD")
+	// 1. Build the SendGrid email object
+	from := mail.NewEmail("Quick-Read System", fromAddress)
+	recipient := mail.NewEmail("Quick-Read User", to)
 
-	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       0,
-	})
+	// plainTextContent is required by SendGrid as a fallback for old email clients
+	plainTextContent := "Please view this email in an HTML-compatible email client."
 
-	ctx, cancel := context.WithTimeout(RedisCtx, 3*time.Second)
-	defer cancel()
+	message := mail.NewSingleEmail(from, subject, recipient, plainTextContent, htmlBody)
 
-	_, err := RedisClient.Ping(ctx).Result()
+	// 2. Send the email using the API key
+	client := sendgrid.NewSendClient(apiKey)
+	response, err := client.Send(message)
+
+	// 3. Handle errors and logging
 	if err != nil {
-		fmt.Println("⚠️  Redis not available, caching disabled:", err)
-		RedisClient = nil
-	} else {
-		fmt.Println("✅ Connected to Redis successfully!")
-	}
-}
-
-// CacheSet stores a value in Redis with a TTL
-func CacheSet(key string, value string, ttl time.Duration) error {
-	if RedisClient == nil {
-		return nil
-	}
-	return RedisClient.Set(RedisCtx, key, value, ttl).Err()
-}
-
-// CacheGet retrieves a value from Redis
-func CacheGet(key string) (string, error) {
-	if RedisClient == nil {
-		return "", fmt.Errorf("redis not available")
-	}
-	return RedisClient.Get(RedisCtx, key).Result()
-}
-
-// CacheDelete removes a key from Redis
-func CacheDelete(key string) error {
-	if RedisClient == nil {
-		return nil
-	}
-	return RedisClient.Del(RedisCtx, key).Err()
-}
-
-// CacheDeletePattern removes all keys matching a pattern
-func CacheDeletePattern(pattern string) error {
-	if RedisClient == nil {
-		return nil
-	}
-	keys, err := RedisClient.Keys(RedisCtx, pattern).Result()
-	if err != nil {
+		fmt.Println("❌ Failed to send email via SendGrid API:", err)
 		return err
 	}
-	if len(keys) > 0 {
-		return RedisClient.Del(RedisCtx, keys...).Err()
+
+	if response.StatusCode >= 200 && response.StatusCode <= 299 {
+		fmt.Println("✅ Email sent to:", to)
+		return nil
 	}
-	return nil
+
+	errResponse := fmt.Errorf("SendGrid returned status %d: %s", response.StatusCode, response.Body)
+	fmt.Println("❌", errResponse)
+	return errResponse
 }

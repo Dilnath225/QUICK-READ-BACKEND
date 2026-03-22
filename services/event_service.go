@@ -1,6 +1,8 @@
 package services
 
 import (
+	"QUICK-READ-SYSTEM/config"
+	"QUICK-READ-SYSTEM/models"
 	"fmt"
 	"sync"
 )
@@ -73,6 +75,8 @@ func (eb *EventBus) Publish(event Event) {
 // RegisterDefaultHandlers sets up the default event handling pipeline
 func RegisterDefaultHandlers() {
 	notifService := &NotificationService{}
+	emailSvc := &EmailService{}
+	smsSvc := &SMSService{}
 
 	// When an order is created, notify the pharmacy
 	Bus.Subscribe(EventOrderCreated, func(e Event) {
@@ -87,29 +91,52 @@ func RegisterDefaultHandlers() {
 	Bus.Subscribe(EventPaymentCompleted, func(e Event) {
 		userID, _ := e.Payload["user_id"].(uint)
 		orderID, _ := e.Payload["order_id"].(uint)
+		
+		// In-app notification
 		notifService.NotifyOrderUpdate(userID, orderID, "Payment confirmed")
+
+		// Email Receipt
+		var user models.User
+		var order models.Order
+		if err := config.DB.First(&user, userID).Error; err == nil {
+			if err := config.DB.First(&order, orderID).Error; err == nil {
+				go emailSvc.SendOrderReceipt(user.Email, order.ID, order.TotalAmount, order.DeliveryFee, order.PaymentMethod)
+			}
+		}
 	})
 
-    // When delivery is assigned, notify the customer
-    Bus.Subscribe(EventDeliveryAssigned, func(e Event) {
-        userID, _ := e.Payload["user_id"].(uint)
-        notifService.NotifyDeliveryUpdate(userID, "A driver has been assigned to your order")
-    })
+	// When delivery is assigned, notify the customer
+	Bus.Subscribe(EventDeliveryAssigned, func(e Event) {
+		userID, _ := e.Payload["user_id"].(uint)
+		notifService.NotifyDeliveryUpdate(userID, "A driver has been assigned to your order")
 
-    // When delivery completes, update driver stats
-    Bus.Subscribe(EventDeliveryCompleted, func(e Event) {
-        userID, _ := e.Payload["user_id"].(uint)
-        orderID, _ := e.Payload["order_id"].(uint)
-        notifService.NotifyOrderUpdate(userID, orderID, "Delivered successfully!")
-    })
+		// SMS Notification
+		var user models.User
+		if err := config.DB.First(&user, userID).Error; err == nil && user.Phone != "" {
+			go smsSvc.SendDeliveryNotification(user.Phone, 0, "assigned to a driver") // orderID not easily available in payload here, but we can pass it if needed
+		}
+	})
 
-    // When stock is low, alert the pharmacist
-    Bus.Subscribe(EventStockLow, func(e Event) {
-        pharmacistID, _ := e.Payload["pharmacist_id"].(uint)
-        medicineName, _ := e.Payload["medicine_name"].(string)
-        stockLevel, _ := e.Payload["stock_level"].(int)
-        notifService.NotifyInventoryAlert(pharmacistID, medicineName, stockLevel)
-    })
+	// When delivery completes, update driver stats
+	Bus.Subscribe(EventDeliveryCompleted, func(e Event) {
+		userID, _ := e.Payload["user_id"].(uint)
+		orderID, _ := e.Payload["order_id"].(uint)
+		notifService.NotifyOrderUpdate(userID, orderID, "Delivered successfully!")
 
-    fmt.Println("✅ Default event handlers registered")
+		// SMS Notification
+		var user models.User
+		if err := config.DB.First(&user, userID).Error; err == nil && user.Phone != "" {
+			go smsSvc.SendDeliveryNotification(user.Phone, orderID, "DELIVERED")
+		}
+	})
+
+	// When stock is low, alert the pharmacist
+	Bus.Subscribe(EventStockLow, func(e Event) {
+		pharmacistID, _ := e.Payload["pharmacist_id"].(uint)
+		medicineName, _ := e.Payload["medicine_name"].(string)
+		stockLevel, _ := e.Payload["stock_level"].(int)
+		notifService.NotifyInventoryAlert(pharmacistID, medicineName, stockLevel)
+	})
+
+	fmt.Println("✅ Default event handlers registered")
 }

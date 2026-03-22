@@ -12,11 +12,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"log"
 )
 
 func RequireAuth(c *gin.Context) {
 	// 1. Get the token from the "Authorization" header
 	tokenString := c.GetHeader("Authorization")
+	log.Printf("[Auth] Request: %s %s, Token length: %d", c.Request.Method, c.Request.URL.Path, len(tokenString))
 
 	// Check if token format is "Bearer <token>"
 	if tokenString == "" || !strings.HasPrefix(tokenString, "Bearer ") {

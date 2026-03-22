@@ -3,6 +3,10 @@ package services
 import (
 	"QUICK-READ-SYSTEM/config"
 	"QUICK-READ-SYSTEM/models"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
 )
 
 type NotificationService struct{}
@@ -58,9 +62,46 @@ func (s *NotificationService) MarkAllAsRead(userID uint) error {
 
 // --- Convenience methods to send specific notification types ---
 
-// NotifyOrderUpdate sends an order update notification
+// NotifyOrderUpdate sends an order update notification (DB + Push)
 func (s *NotificationService) NotifyOrderUpdate(userID uint, orderID uint, status string) {
-	s.Create(userID, "Order Update", "Your order #"+uintToStr(orderID)+" status: "+status, "order_update")
+	title := "Order Update"
+	message := "Your order #" + uintToStr(orderID) + " status: " + status
+	s.Create(userID, title, message, "order_update")
+
+	// Fetch user's push token
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err == nil && user.PushToken != "" {
+		s.SendPushNotification(user.PushToken, title, message)
+	}
+}
+
+// SendPushNotification sends a push notification via Expo Push API
+func (s *NotificationService) SendPushNotification(pushToken, title, body string) error {
+	url := "https://exp.host/--/api/v2/push/send"
+
+	data := map[string]interface{}{
+		"to":    pushToken,
+		"title": title,
+		"body":  body,
+		"sound": "default",
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expo push api returned status: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 // NotifyInventoryAlert sends a low-stock alert to a pharmacist

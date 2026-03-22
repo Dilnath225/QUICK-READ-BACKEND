@@ -13,9 +13,13 @@ type User struct {
 	Email       string `json:"email" gorm:"uniqueIndex;size:255"`
 	Password    string `json:"-"`
 	Role        string `json:"role" gorm:"index;size:100"` // "patient", "pharmacist", "delivery"
-	Address     string `json:"address"`
-	DateOfBirth string `json:"date_of_birth"`
-	Phone       string `json:"phone"`
+	Address        string `json:"address"`
+	DateOfBirth    string `json:"date_of_birth"`
+	Phone          string `json:"phone"`
+	PushToken      string `json:"push_token"`
+	ProfilePicture string `json:"profile_picture"`
+	IsVerified     bool   `json:"is_verified" gorm:"default:false"`
+	OTP            string `json:"-"` // Stored only when Redis is unavailable
 }
 
 // Medicines (for Stock Checking)

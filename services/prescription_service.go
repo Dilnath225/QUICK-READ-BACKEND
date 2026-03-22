@@ -1,54 +1,96 @@
 package services
 
 import (
-	"QUICK-READ-BACKEND/config"
-	"QUICK-READ-BACKEND/models"
-	"context"
+	"QUICK-READ-SYSTEM/config"
+	"QUICK-READ-SYSTEM/models"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	vision "cloud.google.com/go/vision/apiv1"
 	"github.com/google/uuid"
+	"log"
 )
+
+type OCRItem struct {
+	Drug         string `json:"drug_name"`
+	Dosage       string `json:"dosage"`
+	Quantity     string `json:"quantity"`
+	Instructions string `json:"instructions"`
+}
+
+type OCRResponse struct {
+	Status       string    `json:"status"`
+	OCRText      string    `json:"ocr_text"`
+	Prescription []OCRItem `json:"prescription"`
+	Confidence   float64   `json:"confidence"`
+	Message      string    `json:"message"`
+}
 
 type PrescriptionService struct{}
 
-// DetectText sends image to Google Cloud Vision for OCR
-func (s *PrescriptionService) DetectText(filePath string) (string, error) {
-	ctx := context.Background()
-
-	client, err := vision.NewImageAnnotatorClient(ctx)
-	if err != nil {
-		return "", err
+// ScanWithOCRService sends image to our Python FastAPI OCR service
+func (s *PrescriptionService) ScanWithOCRService(filePath string) (*OCRResponse, error) {
+	apiUrl := os.Getenv("OCR_SERVICE_URL")
+	if apiUrl == "" {
+		apiUrl = "http://localhost:8000/api/v1"
 	}
-	defer client.Close()
+	log.Printf("[OCR Service] Sending image to: %s/scan", apiUrl)
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", err
+		log.Printf("[OCR Service] Failed to open file: %v", err)
+		return nil, err
 	}
 	defer file.Close()
 
-	image, err := vision.NewImageFromReader(file)
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	annotations, err := client.DetectTexts(ctx, image, nil, 10)
+	_, err = io.Copy(part, file)
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+	writer.Close()
+
+	req, err := http.NewRequest("POST", apiUrl+"/scan", body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("[OCR Service] HTTP request error: %v", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Printf("[OCR Service] Unexpected status: %d, body: %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("OCR service returned status: %d", resp.StatusCode)
 	}
 
-	if len(annotations) == 0 {
-		return "No text found", nil
+	var result OCRResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Printf("[OCR Service] JSON Decode error: %v", err)
+		return nil, err
 	}
 
-	return annotations[0].Description, nil
+	log.Printf("[OCR Service] Success! Found %d items. Confidence: %.2f", len(result.Prescription), result.Confidence)
+	return &result, nil
 }
 
 // ExtractMedicineData performs simple NLP to extract medicine names and dosage from OCR text
@@ -95,68 +137,59 @@ func (s *PrescriptionService) SaveFile(file *multipart.FileHeader) (string, erro
 func (s *PrescriptionService) UploadToS3(localPath string) (string, error) {
 	bucket := os.Getenv("AWS_S3_BUCKET")
 	if bucket == "" {
-		fmt.Println("⚠️  AWS S3 not configured, using local storage")
 		return localPath, nil
 	}
-
-	// AWS S3 upload using presigned URL approach
-	// In production, use aws-sdk-go-v2:
-	// cfg, _ := awsconfig.LoadDefaultConfig(context.TODO())
-	// client := s3.NewFromConfig(cfg)
-	// key := "prescriptions/" + filepath.Base(localPath)
-	// _, err := client.PutObject(context.TODO(), &s3.PutObjectInput{
-	//     Bucket: aws.String(bucket),
-	//     Key:    aws.String(key),
-	//     Body:   file,
-	// })
-	// return fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucket, key), nil
-
-	fmt.Println("⚠️  S3 upload placeholder — configure AWS credentials for production")
 	return localPath, nil
 }
 
 // ProcessPrescription handles OCR, NLP, and DB storage
 func (s *PrescriptionService) ProcessPrescription(userID uint, filePath string) (*models.Prescription, interface{}, error) {
+	log.Printf("[Prescription] Processing for UserID: %d, File: %s", userID, filePath)
+	
 	// 1. Try uploading to S3
 	imageURL, _ := s.UploadToS3(filePath)
 
-	// 2. Run Real OCR
-	extractedText, err := s.DetectText(filePath)
+	// 2. Run New AI OCR (Gemini Powered)
+	result, err := s.ScanWithOCRService(filePath)
+	
+	var extractedText string
+	var analysisData interface{}
+
 	if err != nil {
-		extractedText = "Error in OCR: " + err.Error()
-	}
-
-	// 3. Run NLP / Extraction
-	medName, medDosage := s.ExtractMedicineData(extractedText)
-
-	analysisText := ""
-	if medName != "" {
-		analysisText = "\n\n--- AI Analysis ---\nDetected Medicine: " + medName
-		if medDosage != "" {
-			analysisText += "\nDetected Dosage: " + medDosage
-		}
+		log.Printf("[Prescription] OCR API call failed: %v", err)
+		extractedText = "OCR Service Error: " + err.Error()
+		analysisData = []interface{}{}
 	} else {
-		analysisText = "\n\n--- AI Analysis ---\nNo known medicine detected in database."
+		extractedText = result.OCRText
+		
+		// Map for Frontend compatibility
+		var mappedItems []map[string]string
+		for _, item := range result.Prescription {
+			mappedItems = append(mappedItems, map[string]string{
+				"medicine_name": item.Drug,
+				"dosage":        item.Dosage,
+				"frequency":     item.Instructions, 
+				"quantity":      item.Quantity,
+				"duration":      "",                
+			})
+		}
+		analysisData = mappedItems
 	}
-	finalText := extractedText + analysisText
 
-	// 4. Save to DB
+	// 3. Save to DB
 	prescription := models.Prescription{
 		UserID:   userID,
 		ImageURL: imageURL,
-		OCRText:  finalText,
+		OCRText:  extractedText,
 		Status:   "pending",
 	}
 
 	if err := config.DB.Create(&prescription).Error; err != nil {
+		log.Printf("[Prescription] DB Save error: %v", err)
 		return nil, nil, err
 	}
 
-	analysisData := map[string]string{
-		"medicine": medName,
-		"dosage":   medDosage,
-	}
-
+	log.Printf("[Prescription] Successfully saved Prescription ID: %d", prescription.ID)
 	return &prescription, analysisData, nil
 }
 

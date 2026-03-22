@@ -15,9 +15,14 @@ var RedisCtx = context.Background()
 // ConnectRedis initializes the Redis client.
 // If Redis is not available, the app continues without caching.
 func ConnectRedis() {
+	if os.Getenv("USE_REDIS") == "false" {
+		fmt.Println("ℹ️  Redis disabled by environment variable")
+		return
+	}
+
 	addr := os.Getenv("REDIS_ADDR")
 	if addr == "" {
-		addr = "localhost:6379"
+		addr = "127.0.0.1:6379" // Use 127.0.0.1 instead of localhost to avoid IPv6 [::1] mismatch
 	}
 
 	password := os.Getenv("REDIS_PASSWORD")
@@ -26,6 +31,7 @@ func ConnectRedis() {
 		Addr:     addr,
 		Password: password,
 		DB:       0,
+		MaxRetries: 0, // Disable retries for initial connection check to avoid log clutter
 	})
 
 	ctx, cancel := context.WithTimeout(RedisCtx, 3*time.Second)
@@ -33,7 +39,7 @@ func ConnectRedis() {
 
 	_, err := RedisClient.Ping(ctx).Result()
 	if err != nil {
-		fmt.Println("⚠️  Redis not available, caching disabled:", err)
+		fmt.Printf("⚠️  Redis not available at %s, caching disabled\n", addr)
 		RedisClient = nil
 	} else {
 		fmt.Println("✅ Connected to Redis successfully!")
