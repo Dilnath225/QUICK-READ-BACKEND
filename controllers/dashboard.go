@@ -39,3 +39,19 @@ func GetDailyRevenue(c *gin.Context) {
 		"reports":     reports,
 	})
 }
+
+// GET /pharmacy/dashboard/orders — Order statistics
+func GetOrderStats(c *gin.Context) {
+
+	user, _ := c.Get("user")
+	currentUser := user.(models.User)
+
+	stats, err := dashboardService.GetOrderStats(currentUser.ID)
+	if err != nil {
+
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, "Order statistics", stats)
+}
