@@ -37,3 +37,23 @@ import (
 		"total": total,
 	})
 }
+
+// GET /cart — View cart
+func GetCart(c *gin.Context) {
+
+	user, _ := c.Get("user")
+	currentUser := user.(models.User)
+
+	cart, err := cartService.GetOrCreateCart(currentUser.ID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	total := cartService.GetCartTotal(cart)
+
+	utils.SuccessResponse(c, "Cart retrieved", gin.H{
+		"cart":  cart,
+		"total": total,
+	})
+}
