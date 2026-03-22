@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"QUICK-READ-SYSTEM/models"
-	"QUICK-READ-SYSTEM/services"
-	"QUICK-READ-SYSTEM/utils"
+	"QUICK-READ-BACKEND/models"
+	"QUICK-READ-BACKEND/services"
+	"QUICK-READ-BACKEND/utils"
 	"net/http"
 	"path/filepath"
 
@@ -48,4 +48,56 @@ func UploadPrescriptionImage(c *gin.Context) {
 		"data":     prescription,
 		"analysis": analysis,
 	})
+}
+
+// GET /prescriptions
+func GetUserPrescriptions(c *gin.Context) {
+	user, _ := c.Get("user")
+	currentUser := user.(models.User)
+
+	prescriptions, err := prescriptionService.GetUserPrescriptions(currentUser.ID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, "Prescriptions retrieved", prescriptions)
+}
+
+// GET /prescriptions/:id
+func GetPrescription(c *gin.Context) {
+	id := c.Param("id")
+
+	prescription, err := prescriptionService.GetPrescription(id)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, "Prescription details", prescription)
+}
+
+// PUT /prescriptions/:id/verify
+func VerifyPrescriptionByPharmacist(c *gin.Context) {
+	id := c.Param("id")
+	var input struct {
+		VerifiedText string `json:"verified_text"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	prescription, err := prescriptionService.VerifyPrescription(id, input.VerifiedText)
+	if err != nil {
+		if err.Error() == "prescription not found" {
+			utils.ErrorResponse(c, http.StatusNotFound, err.Error())
+		} else {
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	utils.SuccessResponse(c, "Verified by Pharmacist", prescription)
 }
