@@ -2,8 +2,8 @@ package services
 
 import (
 	"testing"
-	"QUICK-READ-SYSTEM/config"
-	"QUICK-READ-SYSTEM/models"
+	"QUICK-READ-BACKEND/config"
+	"QUICK-READ-BACKEND/models"
 	"github.com/stretchr/testify/assert"
 )
 

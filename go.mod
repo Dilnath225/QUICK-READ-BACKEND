@@ -1,4 +1,4 @@
-module QUICK-READ-SYSTEM
+module QUICK-READ-BACKEND
 
 go 1.25.1
 

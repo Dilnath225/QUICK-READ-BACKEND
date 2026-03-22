@@ -12,7 +12,7 @@ func SetupRouter(r *gin.Engine) {
 	// Root Health Check
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"message":  "Quick-Read-System API is running!",
+			"message":  "QUICK-READ-BACKEND API is running!",
 			"api_base": "/api",
 		})
 	})
@@ -22,7 +22,7 @@ func SetupRouter(r *gin.Engine) {
 		// Simple Health Check
 		api.GET("/", func(c *gin.Context) {
 			c.JSON(200, gin.H{
-				"message": "Welcome to Quick-Read-System API",
+				"message": "Welcome to QUICK-READ-BACKEND API",
 				"status":  "Running",
 			})
 		})

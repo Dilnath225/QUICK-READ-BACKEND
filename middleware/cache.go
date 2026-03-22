@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"QUICK-READ-SYSTEM/config"
+	"QUICK-READ-BACKEND/config"
 	"crypto/sha256"
 	"fmt"
 	"net/http"

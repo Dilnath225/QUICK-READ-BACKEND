@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"QUICK-READ-SYSTEM/models"
+	"QUICK-READ-BACKEND/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

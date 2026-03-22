@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"QUICK-READ-SYSTEM/config"
+	"QUICK-READ-BACKEND/config"
 	"github.com/stretchr/testify/assert"
 )
 

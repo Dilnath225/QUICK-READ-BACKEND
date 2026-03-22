@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"QUICK-READ-SYSTEM/models"
-	"QUICK-READ-SYSTEM/services"
-	"QUICK-READ-SYSTEM/utils"
+	"QUICK-READ-BACKEND/models"
+	"QUICK-READ-BACKEND/services"
+	"QUICK-READ-BACKEND/utils"
 	"net/http"
 	"log"
 	"os"

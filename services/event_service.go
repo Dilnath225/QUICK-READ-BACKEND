@@ -1,8 +1,8 @@
 package services
 
 import (
-	"QUICK-READ-SYSTEM/config"
-	"QUICK-READ-SYSTEM/models"
+	"QUICK-READ-BACKEND/config"
+	"QUICK-READ-BACKEND/models"
 	"fmt"
 	"sync"
 )

@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"QUICK-READ-SYSTEM/config"
-	"QUICK-READ-SYSTEM/models"
+	"QUICK-READ-BACKEND/config"
+	"QUICK-READ-BACKEND/models"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"

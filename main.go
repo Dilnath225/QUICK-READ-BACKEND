@@ -1,11 +1,11 @@
 package main
 
 import (
-	"QUICK-READ-SYSTEM/Routes"
-	"QUICK-READ-SYSTEM/config"
-	"QUICK-READ-SYSTEM/controllers"
-	"QUICK-READ-SYSTEM/models"
-	"QUICK-READ-SYSTEM/services"
+	"QUICK-READ-BACKEND/Routes"
+	"QUICK-READ-BACKEND/config"
+	"QUICK-READ-BACKEND/controllers"
+	"QUICK-READ-BACKEND/models"
+	"QUICK-READ-BACKEND/services"
 	"log"
 	"os"
 
