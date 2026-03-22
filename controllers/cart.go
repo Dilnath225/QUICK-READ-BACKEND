@@ -79,3 +79,17 @@ func RemoveFromCart(c *gin.Context) {
 		"total": total,
 	})
 }
+
+// DELETE /cart — Clear entire cart
+func ClearCart(c *gin.Context) {
+
+	user, _ := c.Get("user")
+	currentUser := user.(models.User)
+
+	if err := cartService.ClearCart(currentUser.ID); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, "Cart cleared", nil)
+}
