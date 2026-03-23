@@ -15,8 +15,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/google/uuid"
 	"log"
+
+	"github.com/google/uuid"
 )
 
 type OCRItem struct {
@@ -145,13 +146,13 @@ func (s *PrescriptionService) UploadToS3(localPath string) (string, error) {
 // ProcessPrescription handles OCR, NLP, and DB storage
 func (s *PrescriptionService) ProcessPrescription(userID uint, filePath string) (*models.Prescription, interface{}, error) {
 	log.Printf("[Prescription] Processing for UserID: %d, File: %s", userID, filePath)
-	
+
 	// 1. Try uploading to S3
 	imageURL, _ := s.UploadToS3(filePath)
 
 	// 2. Run New AI OCR (Gemini Powered)
 	result, err := s.ScanWithOCRService(filePath)
-	
+
 	var extractedText string
 	var analysisData interface{}
 
@@ -161,16 +162,16 @@ func (s *PrescriptionService) ProcessPrescription(userID uint, filePath string) 
 		analysisData = []interface{}{}
 	} else {
 		extractedText = result.OCRText
-		
+
 		// Map for Frontend compatibility
 		var mappedItems []map[string]string
 		for _, item := range result.Prescription {
 			mappedItems = append(mappedItems, map[string]string{
 				"medicine_name": item.Drug,
 				"dosage":        item.Dosage,
-				"frequency":     item.Instructions, 
+				"frequency":     item.Instructions,
 				"quantity":      item.Quantity,
-				"duration":      "",                
+				"duration":      "",
 			})
 		}
 		analysisData = mappedItems

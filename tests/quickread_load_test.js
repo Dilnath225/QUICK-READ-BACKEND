@@ -13,15 +13,18 @@ export const options = {
     },
 };
 
-// Ensure this matches your Gin server address
-const BASE_URL = 'http://localhost:8080/api';
+// --- CONFIGURATION ---
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080/api';
+const EMAIL = __ENV.TEST_EMAIL || 'kusalibandara@gmail.com';
+const PASSWORD = __ENV.TEST_PASSWORD || 'Kushali@123';
+
 const binFile = open('./test_prescription.jpg', 'b');
 
 export default function () {
     // --- 1. LOGIN ---
     const loginPayload = JSON.stringify({
-        email: 'kusalibandara@gmail.com',
-        password: 'kushali@123',
+        email: EMAIL,
+        password: PASSWORD,
     });
 
     const params = {
@@ -30,11 +33,9 @@ export default function () {
 
     const loginRes = http.post(`${BASE_URL}/login`, loginPayload, params);
 
-    // Validate the response structure (using your specific 'data.token' path)
     const loginPassed = check(loginRes, {
         'status is 200': (r) => r.status === 200,
-        'has data object': (r) => r.json().data !== undefined,
-        'has token in data': (r) => r.json().data && r.json().data.token !== undefined,
+        'has token': (r) => r.json().data && r.json().data.token !== undefined,
     });
 
     if (!loginPassed) {
@@ -42,28 +43,22 @@ export default function () {
         return;
     }
 
-    // Extract the token correctly
     const token = loginRes.json().data.token;
-
-    const authHeaders = {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        }
-    };
 
     // --- 2. PRESCRIPTION UPLOAD ---
     const fd = new FormData();
-    fd.append('image', http.file(binFile, 'test_prescription.jpg', 'image/jpeg'));
+    // Key MUST be 'file' to match Go controller: c.FormFile("file")
+    fd.append('file', http.file(binFile, 'test_prescription.jpg', 'image/jpeg'));
 
-    const uploadRes = http.post(`${BASE_URL}/prescriptions/upload`, fd.body(), {
+    const uploadRes = http.post(`${BASE_URL}/prescriptions`, fd.body(), {
         headers: {
-            ...authHeaders.headers,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data; boundary=' + fd.boundary,
         },
     });
 
     check(uploadRes, {
-        'upload successful (200/201)': (r) => r.status === 200 || r.status === 201,
+        'upload successful (200)': (r) => r.status === 200,
     });
 
     sleep(1);
