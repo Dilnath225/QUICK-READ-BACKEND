@@ -196,3 +196,11 @@ func (s *AuthService) UpdateProfilePicture(userID uint, imageURL string) (*model
 
 	return &user, nil
 }
+
+// DeleteUser performs a soft delete on a user record
+func (s *AuthService) DeleteUser(userID uint) error {
+	if err := config.DB.Delete(&models.User{}, userID).Error; err != nil {
+		return err
+	}
+	return nil
+}
