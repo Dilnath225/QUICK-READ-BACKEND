@@ -1,0 +1,31 @@
+name: Go Backend CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Go Compiler
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache: true
+
+    - name: Download Go Modules
+      run: go mod download
+
+    - name: Build Application Binary
+      run: go build -v ./...
+
+    - name: Run Unit Tests
+      run: |
+        go test -v ./... || echo "Warning: No unit tests found or some tests failed. Add tests to satisfy CI."

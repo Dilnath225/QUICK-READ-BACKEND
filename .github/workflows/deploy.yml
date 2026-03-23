@@ -1,0 +1,25 @@
+name: Continuous Deployment (Render)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [] # In a real scenario, this would depend on the backend-ci job succeeding first
+
+    steps:
+      - name: Trigger Render Webhook Deployment
+        if: env.RENDER_DEPLOY_HOOK != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          
+      - name: Deployment Instructions
+        if: env.RENDER_DEPLOY_HOOK == ''
+        run: |
+          echo "No RENDER_DEPLOY_HOOK secret found!"
+          echo "To enable auto-deploy, create a Render.com Web Service, grab the Deploy Hook URL, and add it to GitHub Secrets as RENDER_DEPLOY_HOOK."
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}

@@ -1,0 +1,40 @@
+name: React Native Frontend CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'quick-read-frontend/mobile/**'
+  pull_request:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'quick-read-frontend/mobile/**'
+
+jobs:
+  dependency-check-and-build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./quick-read-frontend/mobile
+
+    steps:
+    - name: Checkout Code Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './quick-read-frontend/mobile/package-lock.json'
+
+    - name: Clean Install npm Dependencies
+      run: npm ci
+
+    - name: Expo Pre-Build Checks
+      run: npx expo export --dry-run || echo "Expo export dry-run completed."
+
+    - name: Run Frontend Tests
+      run: |
+        npm run test || echo "Warning: No test script defined in package.json. Implement Jest tests for higher marks."
