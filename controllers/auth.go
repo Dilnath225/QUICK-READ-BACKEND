@@ -4,14 +4,14 @@ import (
 	"QUICK-READ-BACKEND/models"
 	"QUICK-READ-BACKEND/services"
 	"QUICK-READ-BACKEND/utils"
-	"net/http"
+	"encoding/base64"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
-	"fmt"
-	"time"
-	"encoding/base64"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -200,4 +200,24 @@ func UploadProfilePicture(c *gin.Context) {
 
 	log.Printf("✅ Profile picture updated for user ID: %d", currentUser.ID)
 	utils.SuccessResponse(c, "Profile picture updated successfully", updatedUser)
+}
+
+// DELETE /users/profile — User deletes their own account
+func DeleteAccount(c *gin.Context) {
+	// Middleware verifies the user
+	userVal, exists := c.Get("user")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Not authenticated")
+		return
+	}
+	currentUser := userVal.(models.User)
+
+	// Call the service layer to delete or deactivate the user
+	if err := authService.DeleteUser(currentUser.ID); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete account")
+		return
+	}
+
+	log.Printf("🗑️ Account deleted for user ID: %d", currentUser.ID)
+	utils.SuccessResponse(c, "Account successfully deleted", nil)
 }
