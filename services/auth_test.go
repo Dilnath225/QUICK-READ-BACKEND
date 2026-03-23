@@ -66,3 +66,30 @@ func TestUpdateProfile(t *testing.T) {
 	assert.Equal(t, "2000-01-01", updatedUser.DateOfBirth)
 	assert.Equal(t, "update@test.com", updatedUser.Email, "Email should not have changed")
 }
+
+func TestDeleteUser(t *testing.T) {
+	// Setup user
+	config.DB.Exec("DELETE FROM users")
+	user := models.User{
+		Name:  "To Be Deleted",
+		Email: "delete@test.com",
+	}
+	config.DB.Create(&user)
+
+	authService := new(AuthService)
+
+	// Delete user
+	err := authService.DeleteUser(user.ID)
+	assert.NoError(t, err)
+
+	// Verify user is soft deleted (not found by First but exists in DB with DeletedAt set)
+	var foundUser models.User
+	err = config.DB.First(&foundUser, user.ID).Error
+	assert.Error(t, err, "User should not be found after deletion")
+
+	// Verify it still exists in DB (soft delete check)
+	var deletedUser models.User
+	err = config.DB.Unscoped().First(&deletedUser, user.ID).Error
+	assert.NoError(t, err)
+	assert.NotNil(t, deletedUser.DeletedAt)
+}
